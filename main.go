@@ -13,7 +13,7 @@ func main() {
 
 	n := core.Re2nfaConstructor(regexp)
 
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/api/generateFA", func(c *fiber.Ctx) error {
 		return c.JSON(n)
 	})
 
