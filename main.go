@@ -1,7 +1,7 @@
 package main
 
 import (
-	"re2fa/core"
+	"re2fa/route"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -9,13 +9,11 @@ import (
 func main() {
 	app := fiber.New()
 
-	regexp := "ab"
+	route.RegisterRouter(app)
 
-	n := core.Re2nfaConstructor(regexp)
+	err := app.Listen(":3000")
 
-	app.Get("/api/generateFA", func(c *fiber.Ctx) error {
-		return c.JSON(n)
-	})
-
-	app.Listen(":3000")
+	if err != nil {
+		panic(err)
+	}
 }

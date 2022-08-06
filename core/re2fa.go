@@ -181,6 +181,7 @@ type Nfa struct {
 }
 
 func Re2nfaConstructor(regexp string) *Nfa {
+	idCount = 0
 	n := &Nfa{}
 
 	postfix := re2postfix(regexp)

@@ -1,5 +1,6 @@
 import vis from "vis-network/dist/vis-network.esm"
 import { useEffect, useState } from "react"
+import request from "./utils/request"
 
 export default function App() {
   const [regexp, setRegexp] = useState("")
@@ -24,9 +25,6 @@ export default function App() {
 
     // create an array with edges
     const edges = new vis.DataSet(dfsGenerateEdges(apiRes.startState))
-
-    console.log(nodes)
-    console.log(edges)
 
     // create a network
     var container = document.getElementById("fa");
@@ -72,11 +70,11 @@ export default function App() {
 
   const generateFAHandler = event => {
     event.preventDefault()
-    fetch("/api/generateFA").then(res => {
-      return res.json()
-    }).then(result => {
-      console.log("result  ", result)
-      setApiRes(result)
+    let finalResult = {}
+    request("/api/generateFA", { regexp }).then(result => {
+      finalResult = result
+    }).finally(() => {
+      setApiRes(finalResult)
     })
   }
 
