@@ -7,7 +7,7 @@ import (
 )
 
 // 操作符优先级
-var operatorPriority = map[byte]int{
+var operatorPriority = map[rune]int{
 	'*': 4,
 	'?': 4,
 	'+': 4,
@@ -16,49 +16,37 @@ var operatorPriority = map[byte]int{
 	'(': 1, // TODO: 左右括号算操作符吗？没用的话去掉
 }
 
-var operatorStack *byteStack
+var operatorStack *runeStack
 var postfixResult strings.Builder
 
 func re2postfix(re string) string {
-	operatorStack = byteStackConstructor()
+	operatorStack = runeStackConstructor()
 	postfixResult.Reset()
 
 	shouldAddConcat := false
 
-	// TODO: del continue change to if-else
-	for i := 0; i < len(re); i++ {
-		ch := re[i]
-
+	for _, ch := range re {
 		if ch == '*' || ch == '?' || ch == '+' {
 			shouldAddConcat = true
 			pushOperator(ch)
-			continue
-		}
-
-		if ch == '|' {
+		} else if ch == '|' {
 			shouldAddConcat = false
 			pushOperator(ch)
-			continue
-		}
-
-		if ch == '(' {
+		} else if ch == '(' {
 			if shouldAddConcat {
 				pushOperator('.')
 			}
 			operatorStack.in(ch)
 			shouldAddConcat = false
-			continue
-		}
-
-		if ch == ')' {
-			var operator byte
+		} else if ch == ')' {
+			var operator rune
 
 			for !operatorStack.isEmpty() {
 				operator = operatorStack.out()
 				if operator == '(' {
 					break
 				}
-				postfixResult.WriteByte(operator)
+				postfixResult.WriteRune(operator)
 			}
 
 			if operator != '(' {
@@ -66,15 +54,14 @@ func re2postfix(re string) string {
 			}
 
 			shouldAddConcat = true
-			continue
-		}
+		} else {
+			if shouldAddConcat {
+				pushOperator('.')
+			}
 
-		if shouldAddConcat {
-			pushOperator('.')
+			postfixResult.WriteRune(ch)
+			shouldAddConcat = true
 		}
-
-		postfixResult.WriteByte(ch)
-		shouldAddConcat = true
 	}
 
 	for !operatorStack.isEmpty() {
@@ -82,13 +69,13 @@ func re2postfix(re string) string {
 		if operator == '(' {
 			panic("unmatched '('")
 		}
-		postfixResult.WriteByte(operator)
+		postfixResult.WriteRune(operator)
 	}
 
 	return postfixResult.String()
 }
 
-func pushOperator(operator byte) {
+func pushOperator(operator rune) {
 	currentPriority := operatorPriority[operator]
 
 	for !operatorStack.isEmpty() {
@@ -96,7 +83,7 @@ func pushOperator(operator byte) {
 		topPriority := operatorPriority[top]
 
 		if topPriority >= currentPriority {
-			postfixResult.WriteByte(top)
+			postfixResult.WriteRune(top)
 		} else {
 			operatorStack.in(top)
 			break
@@ -106,27 +93,27 @@ func pushOperator(operator byte) {
 	operatorStack.in(operator)
 }
 
-type byteStack struct {
-	vals []byte
+type runeStack struct {
+	vals []rune
 }
 
-func byteStackConstructor() *byteStack {
-	return &byteStack{
-		vals: make([]byte, 0),
+func runeStackConstructor() *runeStack {
+	return &runeStack{
+		vals: make([]rune, 0),
 	}
 }
 
-func (s *byteStack) in(val byte) {
+func (s *runeStack) in(val rune) {
 	s.vals = append(s.vals, val)
 }
 
-func (s *byteStack) out() byte {
+func (s *runeStack) out() rune {
 	val := s.vals[len(s.vals)-1]
 	s.vals = s.vals[:len(s.vals)-1]
 	return val
 }
 
-func (s *byteStack) isEmpty() bool {
+func (s *runeStack) isEmpty() bool {
 	return len(s.vals) == 0
 }
 
@@ -197,9 +184,7 @@ func Re2nfaConstructor(regexp string) *Nfa {
 func (n *Nfa) post2nfa(postfix string) {
 	stateStack := stateStackConstructor()
 
-	for i := 0; i < len(postfix); i++ {
-		character := postfix[i]
-
+	for _, character := range postfix {
 		if character == '.' {
 			rightState := stateStack.out()
 			leftState := stateStack.out()
