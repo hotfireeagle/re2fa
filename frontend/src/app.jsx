@@ -11,7 +11,7 @@ export default function App() {
       return
     }
 
-    const startNodeId = apiRes.startState.id
+    const startNodeId = 1
     const endNodeId = apiRes.endState.id
 
     const nodeList = []
