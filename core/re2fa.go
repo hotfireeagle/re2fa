@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+	"re2fa/model"
 	"strings"
 )
 
@@ -157,11 +159,12 @@ type State struct {
 }
 
 func stateConstructor() *State {
-	idCount++
-	return &State{
+	state := &State{
 		Id:          idCount,
 		Transitions: make(map[string][]*State),
 	}
+	idCount += 1
+	return state
 }
 
 func (s *State) setEnd(end *State) {
@@ -260,4 +263,64 @@ func (n *Nfa) post2nfa(postfix string) {
 
 	n.StartState = state
 	n.EndState = state.End
+}
+
+func (n *Nfa) ConvertToJSON() *model.DrawNFAResponse {
+	startState := n.StartState
+	endState := n.EndState
+
+	startId := startState.Id
+	endId := endState.Id
+
+	// TODO: is necessary ? let frontend to is ok, because it also need do loop to construct
+	states := make([]int, endId+1)
+	for i := 0; i <= endId; i++ {
+		states[i] = i
+	}
+
+	edges := make([]model.Edge, 0)
+	visited := make(map[string]bool) // key is fromStateId-inputSymbol-idx
+
+	var dfs func(s *State)
+
+	dfs = func(state *State) {
+		if state == nil {
+			return
+		}
+
+		from := state.Id
+
+		for inputSymbol, nextStates := range state.Transitions {
+			for idx, nextState := range nextStates {
+				to := nextState.Id
+				edgeIdx := fmt.Sprintf("%d-%s-%d", from, inputSymbol, idx)
+				if visited[edgeIdx] {
+					continue
+				}
+				visited[edgeIdx] = true
+
+				var label string
+				if inputSymbol == "-1" {
+					label = "ε"
+				} else {
+					label = inputSymbol
+				}
+				edges = append(edges, model.Edge{
+					From:  from,
+					To:    to,
+					Label: label,
+				})
+				dfs(nextState)
+			}
+		}
+	}
+
+	dfs(startState)
+
+	return &model.DrawNFAResponse{
+		Nodes:       states,
+		Edges:       edges,
+		StartState:  startId,
+		AcceptState: endId,
+	}
 }

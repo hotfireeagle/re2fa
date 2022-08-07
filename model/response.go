@@ -13,3 +13,16 @@ type Response struct {
 	ErrorLog string       `json:"errorLog"`
 	Data     interface{}  `json:"data"`
 }
+
+type Edge struct {
+	From  int    `json:"from"`
+	To    int    `json:"to"`
+	Label string `json:"label"`
+}
+
+type DrawNFAResponse struct {
+	Nodes       []int  `json:"nodes"`
+	Edges       []Edge `json:"edges"`
+	StartState  int
+	AcceptState int
+}

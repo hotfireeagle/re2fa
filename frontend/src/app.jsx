@@ -7,16 +7,13 @@ export default function App() {
   const [apiRes, setApiRes] = useState({})
 
   useEffect(() => {
-    if (!apiRes?.startState) {
+    if (!apiRes?.nodes) {
       return
     }
 
-    const startNodeId = 1
-    const endNodeId = apiRes.endState.id
-
     const nodeList = []
-    for (let i = startNodeId; i <= endNodeId; i++) {
-      const item = { id: i, label: `s${i}`}
+    for (const id of apiRes.nodes) {
+      const item = { id, label: `s${id}`}
       nodeList.push(item)
     }
 
@@ -24,7 +21,7 @@ export default function App() {
     const nodes = new vis.DataSet(nodeList)
 
     // create an array with edges
-    const edges = new vis.DataSet(dfsGenerateEdges(apiRes.startState))
+    const edges = new vis.DataSet(apiRes.edges)
 
     // create a network
     const container = document.getElementById("fa")
@@ -65,34 +62,6 @@ export default function App() {
     }
     new vis.Network(container, data, options)
   }, [apiRes])
-
-  const dfsGenerateEdges = startStateObj => {
-    const edgeList = []
-
-    const dfs = obj => {
-      if (!obj) {
-        return
-      }
-      const { id, transitions } = obj
-      const inputSymbols = Object.keys(transitions)
-
-      for (const inputSymbol of inputSymbols) {
-        const nextNodeList = transitions[inputSymbol]
-
-        for (const nextNode of nextNodeList) {
-          const to = nextNode.id
-          const label = inputSymbol == "-1" ? "ε" : inputSymbol
-          const item = { from: id, to, label }
-          edgeList.push(item)
-          dfs(nextNode)
-        }
-      }
-    }
-
-    dfs(startStateObj)
-
-    return edgeList
-  }
 
   const regexpChangeInputHandler = event => {
     setRegexp(event.target.value)

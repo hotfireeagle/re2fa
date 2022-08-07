@@ -21,7 +21,7 @@ func generateFA(ctx *fiber.Ctx) error {
 	nfaObj := core.Re2nfaConstructor(obj.RegExp)
 	okRes := model.Response{
 		Code: model.Success,
-		Data: nfaObj,
+		Data: nfaObj.ConvertToJSON(),
 	}
 
 	return ctx.JSON(&okRes)
