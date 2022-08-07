@@ -1,11 +1,14 @@
 import vis from "vis-network/dist/vis-network.esm"
 import { useEffect, useState } from "react"
 import request from "./utils/request"
+import useFANoEpsilon from "./hooks/useFANoEpsilon"
 
 export default function App() {
   const [regexp, setRegexp] = useState("")
   const [apiRes, setApiRes] = useState(null)
+  const [faNoEpsilonApiRes, setFaNoEpsilonApiRes] = useState(null)
 
+  // TODO: refactor
   useEffect(() => {
     if (!apiRes) {
       return
@@ -81,6 +84,8 @@ export default function App() {
     new vis.Network(container, data, options)
   }, [apiRes])
 
+  useFANoEpsilon(faNoEpsilonApiRes)
+
   const regexpChangeInputHandler = event => {
     setRegexp(event.target.value)
   }
@@ -92,6 +97,17 @@ export default function App() {
       finalResult = result
     }).finally(() => {
       setApiRes(finalResult)
+    })
+  }
+
+  const generateFANoEpsilonHandler = event => {
+    event.preventDefault()
+    let finalResult = {}
+    return request("/api/generateFANoEpsilon", { regexp }).then(result => {
+      finalResult = result
+    }).finally(() => {
+      setFaNoEpsilonApiRes(finalResult)
+      // setApiRes(finalResult)
     })
   }
 
@@ -107,9 +123,15 @@ export default function App() {
           />
           <button
             onClick={generateFAHandler}
-            className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
+            className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
             Generate FA
+          </button>
+          <button
+            onClick={generateFANoEpsilonHandler}
+            className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
+          >
+            Generate FA But No Epsilon
           </button>
         </div>
       </form>
