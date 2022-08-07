@@ -32,6 +32,15 @@ const useFANoEpsilon = apiRes => {
           color: "#fff",
         }
       }
+      if (acceptStates.includes(id) && startStates.includes(id)) {
+        item.color = {
+          background: "green",
+          border: "green",
+        }
+        item.font = {
+          color: "#fff",
+        }
+      }
       nodeList.push(item)
     }
 
