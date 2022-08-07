@@ -47,9 +47,10 @@ func NoEpsilonFAConstructor(nfa *Nfa) *NoEpsilonFA {
 
 		stateId := state.Id
 
-		if _, ok := nefa.States[stateId]; !ok {
-			nefa.States[stateId] = state
+		if _, ok := nefa.States[stateId]; ok {
+			return
 		}
+		nefa.States[stateId] = state
 
 		for _, nextStates := range state.Transitions {
 			for _, nextState := range nextStates {
@@ -67,6 +68,7 @@ func NoEpsilonFAConstructor(nfa *Nfa) *NoEpsilonFA {
 
 func (n *NoEpsilonFA) findAllEpsilonStartState() map[int]bool {
 	result := make(map[int]bool)
+	visitedStateMap := make(map[int]bool)
 
 	var dfsFindAllEpsilonStartState func(state *State)
 
@@ -74,6 +76,10 @@ func (n *NoEpsilonFA) findAllEpsilonStartState() map[int]bool {
 		if s == nil {
 			return
 		}
+		if _, ok := visitedStateMap[s.Id]; ok {
+			return
+		}
+		visitedStateMap[s.Id] = true
 
 		for inputSymbol, nextStates := range s.Transitions {
 			if inputSymbol == "-1" {

@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchFA = (event, api, updater) => {
     event.preventDefault()
-    let finalResult = {}
+    let finalResult = null
     return request(api, { regexp }).then(result => {
       finalResult = result
     }).finally(() => {
