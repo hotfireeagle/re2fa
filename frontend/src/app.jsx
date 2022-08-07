@@ -27,13 +27,43 @@ export default function App() {
     const edges = new vis.DataSet(dfsGenerateEdges(apiRes.startState))
 
     // create a network
-    var container = document.getElementById("fa");
-    var data = {
-      nodes: nodes,
-      edges: edges
-    };
-    var options = {};
-    var network = new vis.Network(container, data, options);
+    const container = document.getElementById("fa")
+    const data = { nodes: nodes, edges: edges }
+
+    const options = {
+      edges: {
+        arrows: {
+          to: {
+            enabled: true,
+            scaleFactor: 1,
+            type: "arrow"
+          },
+          from: {
+            enabled: false,
+            scaleFactor: 1,
+            type: "arrow"
+          }
+        },
+        arrowStrikethrough: true,
+        chosen: true,
+        // transition line color
+        color: {
+          color: "#848484",
+          highlight: "#848484",
+          hover: "#848484",
+          inherit: "from",
+          opacity: 1.0
+        },
+        dashes: false,
+        hoverWidth: 1.5,
+        labelHighlightBold: true,
+        physics: true,
+      },
+      layout: {
+        randomSeed: 0.1,
+      }
+    }
+    new vis.Network(container, data, options)
   }, [apiRes])
 
   const dfsGenerateEdges = startStateObj => {
@@ -71,7 +101,7 @@ export default function App() {
   const generateFAHandler = event => {
     event.preventDefault()
     let finalResult = {}
-    request("/api/generateFA", { regexp }).then(result => {
+    return request("/api/generateFA", { regexp }).then(result => {
       finalResult = result
     }).finally(() => {
       setApiRes(finalResult)
@@ -80,25 +110,23 @@ export default function App() {
 
   return (
     <div className="flex flex-col container bg-gray-50 w-screen max-w-none h-screen">
-      <form className="w-screen h50 p-8 bg-blue-800">
-        <div className="mx-auto">
+      <form className="w-screen p-5 bg-blue-600 bg-opacity-60">
+        <div className="text-center">
           <input
+            placeholder="Enter regexp"
             value={regexp}
             onChange={regexpChangeInputHandler}
-            className="border border-transparent focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+            className="border w-96 max-w-none p-2 px-3 rounded-lg mr-6 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
           />
           <button
             onClick={generateFAHandler}
-            className="bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-opacity-50 text-white"
+            className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
-            生成FA描述
+            Generate FA
           </button>
         </div>
       </form>
-      <div id="fa" className="flex-grow bg-white">
-
-      </div>
+      <div id="fa" className="flex-grow bg-white" />
     </div>
-    
   )
 }
