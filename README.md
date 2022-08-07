@@ -1,6 +1,5 @@
 ### todos
 
-+ [ ] 前端绘制时，区别出startState和acceptState
 + [ ] 修复regexp中存在中文时显示错误问题
 + [ ] regexp需要支持[0-9]诸如此类的语法糖
 + [ ] regexp需要支持?、+这样的语法糖

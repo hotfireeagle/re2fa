@@ -4,16 +4,34 @@ import request from "./utils/request"
 
 export default function App() {
   const [regexp, setRegexp] = useState("")
-  const [apiRes, setApiRes] = useState({})
+  const [apiRes, setApiRes] = useState(null)
 
   useEffect(() => {
-    if (!apiRes?.nodes) {
+    if (!apiRes) {
       return
     }
 
     const nodeList = []
-    for (const id of apiRes.nodes) {
+    for (let id  = 0; id <= apiRes?.acceptState; id++) {
       const item = { id, label: `s${id}`}
+      if (id == apiRes?.startState) {
+        item.color = {
+          background: "red",
+          border: "red",
+        }
+        item.font = {
+          color: "#fff",
+        }
+      }
+      if (id == apiRes?.acceptState) {
+        item.color = {
+          background: "blue",
+          border: "blue",
+        }
+        item.font = {
+          color: "#fff",
+        }
+      }
       nodeList.push(item)
     }
 

@@ -21,8 +21,7 @@ type Edge struct {
 }
 
 type DrawNFAResponse struct {
-	Nodes       []int  `json:"nodes"`
 	Edges       []Edge `json:"edges"`
-	StartState  int
-	AcceptState int
+	StartState  int    `json:"startState"`
+	AcceptState int    `json:"acceptState"`
 }

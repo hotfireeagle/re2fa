@@ -272,12 +272,6 @@ func (n *Nfa) ConvertToJSON() *model.DrawNFAResponse {
 	startId := startState.Id
 	endId := endState.Id
 
-	// TODO: is necessary ? let frontend to is ok, because it also need do loop to construct
-	states := make([]int, endId+1)
-	for i := 0; i <= endId; i++ {
-		states[i] = i
-	}
-
 	edges := make([]model.Edge, 0)
 	visited := make(map[string]bool) // key is fromStateId-inputSymbol-idx
 
@@ -318,7 +312,6 @@ func (n *Nfa) ConvertToJSON() *model.DrawNFAResponse {
 	dfs(startState)
 
 	return &model.DrawNFAResponse{
-		Nodes:       states,
 		Edges:       edges,
 		StartState:  startId,
 		AcceptState: endId,
