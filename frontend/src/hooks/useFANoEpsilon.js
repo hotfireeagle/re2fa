@@ -70,8 +70,13 @@ const useFANoEpsilon = apiRes => {
 
     for (let key in visitedEdge) {
       const [from, to] = key.split("-")
+      const toFromStr = `${to}-${from}`
       const label = visitedEdge[key].join(",")
-      edgeList.push({ from, to, label })
+      const item = { from, to, label }
+      if (visitedEdge[toFromStr]) {
+        item.smooth = { type: "curvedCW", roundness: -2.4 }
+      }
+      edgeList.push(item)
     }
     const edges = new vis.DataSet(edgeList)
 
