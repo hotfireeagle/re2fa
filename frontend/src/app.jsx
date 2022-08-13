@@ -36,7 +36,7 @@ export default function App() {
             className="border w-96 max-w-none p-2 px-3 rounded-lg mr-6 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
           />
           <button
-            onClick={event => fetchFA(event, "/api/generateFA", setApiRes)}
+            onClick={event => fetchFA(event, "/api/generateFA", setFaNoEpsilonApiRes)}
             className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
             Generate FA

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"re2fa/model"
 	"strings"
 )
@@ -118,31 +117,98 @@ func (s *runeStack) isEmpty() bool {
 }
 
 type stateStack struct {
-	vals []*State
+	// vals []*State
+	vals []int
 }
 
 func stateStackConstructor() *stateStack {
 	return &stateStack{
-		vals: make([]*State, 0),
+		vals: make([]int, 0),
+		// vals: make([]*State, 0),
 	}
 }
 
-func (s *stateStack) in(st *State) {
-	s.vals = append(s.vals, st)
+func (s *stateStack) in(v int) {
+	s.vals = append(s.vals, v)
 }
 
-func (s *stateStack) out() *State {
+func (s *stateStack) out() int {
 	st := s.vals[len(s.vals)-1]
 	s.vals = s.vals[:len(s.vals)-1]
 	return st
 }
 
+type NFA struct {
+	States        []int                    // 状态slice
+	InputSymbols  []string                 // 输入inputSymbol
+	TransitionMap map[int]map[string][]int // 状态转移函数
+	StartStates   []int                    // 开始状态
+	AcceptStates  []int                    // 接受状态
+	BeginEndPairs map[int]int              // 一对状态的开始和结束
+}
+
+func NewNFA() *NFA {
+	return &NFA{
+		States:        make([]int, 0),
+		InputSymbols:  make([]string, 0),
+		TransitionMap: make(map[int]map[string][]int),
+		StartStates:   make([]int, 0),
+		AcceptStates:  make([]int, 0),
+		BeginEndPairs: make(map[int]int),
+	}
+}
+
+func (n *NFA) AddState() int {
+	stateId := stateFactory()
+	n.States = append(n.States, stateId)
+	return stateId
+}
+
+func (n *NFA) AddInputSymbol(inputSymbol string) {
+	n.InputSymbols = append(n.InputSymbols, inputSymbol)
+}
+
+func (n *NFA) AddTransition(inputSymbol string, fromStateId int, toStateId int) {
+	if _, ok := n.TransitionMap[fromStateId]; !ok {
+		n.TransitionMap[fromStateId] = make(map[string][]int)
+	}
+
+	if n.TransitionMap[fromStateId][inputSymbol] == nil {
+		n.TransitionMap[fromStateId][inputSymbol] = make([]int, 0)
+	}
+
+	n.TransitionMap[fromStateId][inputSymbol] = append(n.TransitionMap[fromStateId][inputSymbol], toStateId)
+}
+
+func (n *NFA) SetBeginEndPairs(beginState int, endState int) {
+	n.BeginEndPairs[beginState] = endState
+}
+
+func (n *NFA) GetEndState(beginState int) int {
+	return n.BeginEndPairs[beginState]
+}
+
+func (n *NFA) AddStartState(stateId int) {
+	n.StartStates = append(n.StartStates, stateId)
+}
+
+func (n *NFA) AddAcceptState(stateId int) {
+	n.AcceptStates = append(n.AcceptStates, stateId)
+}
+
 var idCount int
+var epsilonSymbol = "ε"
 
 type State struct {
 	Id          int                 `json:"id"`
 	Transitions map[string][]*State `json:"transitions"`
 	End         *State              `json:"end"`
+}
+
+func stateFactory() int {
+	result := idCount
+	idCount += 1
+	return result
 }
 
 func stateConstructor() *State {
@@ -170,18 +236,20 @@ type Nfa struct {
 	EndState   *State `json:"endState"`
 }
 
-func Re2nfaConstructor(regexp string) *Nfa {
+func Re2nfaConstructor(regexp string) *NFA {
 	idCount = 0
-	n := &Nfa{}
+
+	n := NewNFA()
+	// n := &Nfa{}
 
 	postfix := re2postfix(regexp)
 
-	n.post2nfa(postfix)
+	n.Postfix2NFA(postfix)
 
 	return n
 }
 
-func (n *Nfa) post2nfa(postfix string) {
+func (n *NFA) Postfix2NFA(postfix string) {
 	stateStack := stateStackConstructor()
 
 	for _, character := range postfix {
@@ -189,116 +257,180 @@ func (n *Nfa) post2nfa(postfix string) {
 			rightState := stateStack.out()
 			leftState := stateStack.out()
 
-			epsilonSymbol := "-1"
-			leftState.End.addTransition(epsilonSymbol, rightState)
-			leftState.End = rightState.End
+			n.AddTransition(epsilonSymbol, n.GetEndState(leftState), rightState)
+			n.SetBeginEndPairs(leftState, n.GetEndState(rightState))
+			// epsilonSymbol := "-1"
+			// leftState.End.addTransition(epsilonSymbol, rightState)
+			// leftState.End = rightState.End
 
 			stateStack.in(leftState)
 		} else if character == '|' {
 			rightState := stateStack.out()
 			leftState := stateStack.out()
 
-			newBegin := stateConstructor()
-			newEnd := stateConstructor()
-			newBegin.setEnd(newEnd)
+			newBegin := n.AddState()
+			newEnd := n.AddState()
 
-			epsilonSymbol := "-1"
+			n.SetBeginEndPairs(newBegin, newEnd)
 
-			newBegin.addTransition(epsilonSymbol, leftState)
-			newBegin.addTransition(epsilonSymbol, rightState)
+			n.AddTransition(epsilonSymbol, newBegin, leftState)
+			n.AddTransition(epsilonSymbol, newBegin, rightState)
 
-			rightStateEnd := rightState.End
-			leftStateEnd := leftState.End
+			rightStateEnd := n.GetEndState(rightState)
+			leftStateEnd := n.GetEndState(leftState)
 
-			rightStateEnd.addTransition(epsilonSymbol, newEnd)
-			leftStateEnd.addTransition(epsilonSymbol, newEnd)
+			n.AddTransition(epsilonSymbol, rightStateEnd, newEnd)
+			n.AddTransition(epsilonSymbol, leftStateEnd, newEnd)
 
 			stateStack.in(newBegin)
+
+			// newBegin := stateConstructor()
+			// newEnd := stateConstructor()
+			// newBegin.setEnd(newEnd)
+
+			// epsilonSymbol := "-1"
+
+			// newBegin.addTransition(epsilonSymbol, leftState)
+			// newBegin.addTransition(epsilonSymbol, rightState)
+
+			// rightStateEnd := rightState.End
+			// leftStateEnd := leftState.End
+
+			// rightStateEnd.addTransition(epsilonSymbol, newEnd)
+			// leftStateEnd.addTransition(epsilonSymbol, newEnd)
+
+			// stateStack.in(newBegin)
 		} else if character == '*' {
 			state := stateStack.out()
 
-			newBegin := stateConstructor()
-			newEnd := stateConstructor()
-			newBegin.setEnd(newEnd)
+			newBegin := n.AddState()
+			newEnd := n.AddState()
+			n.SetBeginEndPairs(newBegin, newEnd)
 
-			epsilonSymbol := "-1"
+			stateEnd := n.GetEndState(state)
 
-			stateEnd := state.End
-
-			newBegin.addTransition(epsilonSymbol, state)
-			stateEnd.addTransition(epsilonSymbol, state)
-			stateEnd.addTransition(epsilonSymbol, newEnd)
-			newBegin.addTransition(epsilonSymbol, newEnd)
+			n.AddTransition(epsilonSymbol, newBegin, state)
+			n.AddTransition(epsilonSymbol, stateEnd, state)
+			n.AddTransition(epsilonSymbol, stateEnd, newEnd)
+			n.AddTransition(epsilonSymbol, newBegin, newEnd)
 
 			stateStack.in(newBegin)
+
+			// newBegin := stateConstructor()
+			// newEnd := stateConstructor()
+			// newBegin.setEnd(newEnd)
+
+			// epsilonSymbol := "-1"
+
+			// stateEnd := state.End
+
+			// newBegin.addTransition(epsilonSymbol, state)
+			// stateEnd.addTransition(epsilonSymbol, state)
+			// stateEnd.addTransition(epsilonSymbol, newEnd)
+			// newBegin.addTransition(epsilonSymbol, newEnd)
+
+			// stateStack.in(newBegin)
 		} else {
-			begin := stateConstructor()
-			end := stateConstructor()
-			begin.setEnd(end)
+			beginStateId := n.AddState()
+			endStateId := n.AddState()
 
-			characterSymbol := string(character)
+			n.SetBeginEndPairs(beginStateId, endStateId)
+			stateStack.in(beginStateId)
 
-			begin.addTransition(characterSymbol, end)
+			n.AddTransition(string(character), beginStateId, endStateId)
+			// begin := stateConstructor()
+			// end := stateConstructor()
+			// begin.setEnd(end)
 
-			stateStack.in(begin)
+			// characterSymbol := string(character)
+
+			// begin.addTransition(characterSymbol, end)
+
+			// stateStack.in(begin)
 		}
 	}
 
-	state := stateStack.out()
+	startState := stateStack.out()
+	n.AddStartState(startState)
+	n.AddAcceptState(n.GetEndState(startState))
 
-	n.StartState = state
-	n.EndState = state.End
+	// state := stateStack.out()
+
+	// n.StartState = state
+	// n.EndState = state.End
 }
 
-func (n *Nfa) ConvertToJSON() *model.DrawNFAResponse {
-	startState := n.StartState
-	endState := n.EndState
+// what's frontend need?
+func (n *NFA) ConvertToJSON() *model.DrawNFAResponse {
+	edges := make([]*model.Edge, 0)
 
-	startId := startState.Id
-	endId := endState.Id
-
-	edges := make([]model.Edge, 0)
-	visited := make(map[string]bool) // key is fromStateId-inputSymbol-idx
-
-	var dfs func(s *State)
-
-	dfs = func(state *State) {
-		if state == nil {
-			return
-		}
-
-		from := state.Id
-
-		for inputSymbol, nextStates := range state.Transitions {
-			for idx, nextState := range nextStates {
-				to := nextState.Id
-				edgeIdx := fmt.Sprintf("%d-%s-%d", from, inputSymbol, idx)
-				if visited[edgeIdx] {
-					continue
+	for startStateId, pathMap := range n.TransitionMap {
+		for inputSymbol, endStates := range pathMap {
+			for _, endStateId := range endStates {
+				edge := &model.Edge{
+					From:  startStateId,
+					To:    endStateId,
+					Label: inputSymbol,
 				}
-				visited[edgeIdx] = true
-
-				var label string
-				if inputSymbol == "-1" {
-					label = "ε"
-				} else {
-					label = inputSymbol
-				}
-				edges = append(edges, model.Edge{
-					From:  from,
-					To:    to,
-					Label: label,
-				})
-				dfs(nextState)
+				edges = append(edges, edge)
 			}
 		}
 	}
 
-	dfs(startState)
-
 	return &model.DrawNFAResponse{
-		Edges:       edges,
-		StartState:  startId,
-		AcceptState: endId,
+		Edges:        edges,
+		Nodes:        n.States,
+		StartStates:  n.StartStates,
+		AcceptStates: n.AcceptStates,
 	}
+	// startState := n.StartState
+	// endState := n.EndState
+
+	// startId := startState.Id
+	// endId := endState.Id
+
+	// edges := make([]model.Edge, 0)
+	// visited := make(map[string]bool) // key is fromStateId-inputSymbol-idx
+
+	// var dfs func(s *State)
+
+	// dfs = func(state *State) {
+	// 	if state == nil {
+	// 		return
+	// 	}
+
+	// 	from := state.Id
+
+	// 	for inputSymbol, nextStates := range state.Transitions {
+	// 		for idx, nextState := range nextStates {
+	// 			to := nextState.Id
+	// 			edgeIdx := fmt.Sprintf("%d-%s-%d", from, inputSymbol, idx)
+	// 			if visited[edgeIdx] {
+	// 				continue
+	// 			}
+	// 			visited[edgeIdx] = true
+
+	// 			var label string
+	// 			if inputSymbol == "-1" {
+	// 				label = "ε"
+	// 			} else {
+	// 				label = inputSymbol
+	// 			}
+	// 			edges = append(edges, model.Edge{
+	// 				From:  from,
+	// 				To:    to,
+	// 				Label: label,
+	// 			})
+	// 			dfs(nextState)
+	// 		}
+	// 	}
+	// }
+
+	// dfs(startState)
+
+	// return &model.DrawNFAResponse{
+	// 	Edges:       edges,
+	// 	StartState:  startId,
+	// 	AcceptState: endId,
+	// }
 }
