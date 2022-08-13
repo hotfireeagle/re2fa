@@ -56,11 +56,24 @@ const useFANoEpsilon = apiRes => {
     // create an array with nodes
     const nodes = new vis.DataSet(nodeList)
 
-    // create an array with edges
-    const newEdges = apiRes.edges.filter(obj => {
-      return obj.from != apiRes.deadState
-    })
-    const edges = new vis.DataSet(newEdges)
+    const edgeList = []
+    const visitedEdge = {}
+
+    for (let edgeObj of apiRes?.edges) {
+      const { from, to, label } = edgeObj
+      const str = `${from}-${to}`
+      if (!visitedEdge[str]) {
+        visitedEdge[str] = []
+      }
+      visitedEdge[str].push(label)
+    }
+
+    for (let key in visitedEdge) {
+      const [from, to] = key.split("-")
+      const label = visitedEdge[key].join(",")
+      edgeList.push({ from, to, label })
+    }
+    const edges = new vis.DataSet(edgeList)
 
     // create a network
     const container = document.getElementById("fa")
