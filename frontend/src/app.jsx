@@ -1,14 +1,11 @@
 import { useState } from "react"
 import request from "./utils/request"
-import useFA from "./hooks/useFA"
 import useFANoEpsilon from "./hooks/useFANoEpsilon"
 
 export default function App() {
   const [regexp, setRegexp] = useState("")
-  const [apiRes, setApiRes] = useState(null)
   const [faNoEpsilonApiRes, setFaNoEpsilonApiRes] = useState(null)
 
-  useFA(apiRes)
   useFANoEpsilon(faNoEpsilonApiRes)
 
   const regexpChangeInputHandler = event => {
@@ -39,13 +36,13 @@ export default function App() {
             onClick={event => fetchFA(event, "/api/generateFA", setFaNoEpsilonApiRes)}
             className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
-            Generate FA
+            Generate NFA
           </button>
           <button
             onClick={event => fetchFA(event, "/api/generateDFA", setFaNoEpsilonApiRes)}
             className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
-            Generate FA But No Epsilon
+            Generate DFA
           </button>
         </div>
       </form>

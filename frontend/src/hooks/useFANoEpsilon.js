@@ -53,8 +53,6 @@ const useFANoEpsilon = apiRes => {
       nodeList.push(item)
     }
 
-
-
     // create an array with nodes
     const nodes = new vis.DataSet(nodeList)
 
