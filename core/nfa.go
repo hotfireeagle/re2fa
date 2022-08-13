@@ -15,20 +15,121 @@ var operatorPriority = map[rune]int{
 	'+': 4,
 	'.': 3,
 	'|': 2,
-	'(': 1, // TODO: 左右括号算操作符吗？没用的话去掉
+	'(': 1,
 }
 
 var operatorStack *runeStack
 var postfixResult strings.Builder
 var inputSymbolAddedMap map[string]bool
 
+func isNum(r byte) bool {
+	return r >= '0' && r <= '9'
+}
+
+func isBigCharacter(r byte) bool {
+	return r >= 'a' && r <= 'z'
+}
+
+func isSmallestCharacter(r byte) bool {
+	return r >= 'A' && r <= 'Z'
+}
+
+// 应该可优化
+func preConvert(str string) string {
+	var result strings.Builder
+	var needAddUnion bool = false
+
+	var doNextWork = func(startPos int) int {
+		var returnIdx int
+		idx := startPos
+		for idx < len(str) {
+			ch := str[idx]
+			if ch == '-' {
+				if idx+1 < len(str) {
+					beforeCharacter := str[idx-1]
+					nextCharacter := str[idx+1]
+
+					if isNum(beforeCharacter) && isNum(nextCharacter) {
+						n1 := int(beforeCharacter - '0')
+						n2 := int(nextCharacter - '0')
+
+						for i := n1 + 1; i <= n2; i++ {
+							result.WriteRune('|')
+							result.WriteRune(rune(i + '0'))
+						}
+
+						idx += 2
+					} else if isBigCharacter(beforeCharacter) && isBigCharacter(nextCharacter) {
+						n1 := int(beforeCharacter - 'A')
+						n2 := int(nextCharacter - 'A')
+
+						for i := n1 + 1; i <= n2; i++ {
+							result.WriteRune('|')
+							result.WriteRune(rune(i + 'A'))
+						}
+
+						idx += 2
+					} else if isSmallestCharacter(beforeCharacter) && isSmallestCharacter(nextCharacter) {
+						n1 := int(beforeCharacter - 'a')
+						n2 := int(nextCharacter - 'a')
+
+						for i := n1 + 1; i <= n2; i++ {
+							result.WriteRune('|')
+							result.WriteRune(rune(i + 'a'))
+						}
+
+						idx += 2
+					} else {
+						if beforeCharacter == '[' && nextCharacter == ']' {
+							result.WriteRune('-')
+							idx += 1
+						} else {
+							panic("invalid character")
+						}
+					}
+				} else {
+					panic("invalid range")
+				}
+			} else if ch == ']' {
+				result.WriteRune(')')
+				returnIdx = idx + 1
+				break
+			} else {
+				if needAddUnion {
+					result.WriteRune('|')
+				}
+				result.WriteByte(ch)
+				idx += 1
+				needAddUnion = true
+			}
+		}
+		return returnIdx
+	}
+
+	idx := 0
+	for idx < len(str) {
+		ch := str[idx]
+		if ch == '[' {
+			result.WriteRune('(')
+			idx = doNextWork(idx + 1)
+		} else {
+			result.WriteByte(ch)
+			idx += 1
+		}
+	}
+
+	return result.String()
+}
+
 func re2postfix(re string) string {
+	re2 := preConvert(re)
+
 	operatorStack = runeStackConstructor()
 	postfixResult.Reset()
 
 	shouldAddConcat := false
 
-	for _, ch := range re {
+	for _, ch := range re2 {
 		if ch == '*' || ch == '?' || ch == '+' {
 			shouldAddConcat = true
 			pushOperator(ch)

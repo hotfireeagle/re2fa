@@ -25,7 +25,7 @@ export const options = {
     dashes: false,
     hoverWidth: 1.5,
     labelHighlightBold: true,
-    physics: true,
+    physics: false,
   },
   layout: {
     randomSeed: 0.1,
