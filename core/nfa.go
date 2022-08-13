@@ -110,6 +110,7 @@ func preConvert(str string) string {
 	for idx < len(str) {
 		ch := str[idx]
 		if ch == '[' {
+			needAddUnion = false
 			result.WriteRune('(')
 			idx = doNextWork(idx + 1)
 		} else {
