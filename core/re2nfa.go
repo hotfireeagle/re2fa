@@ -303,5 +303,6 @@ func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
 		Nodes:        n.States,
 		StartState:   n.StartState,
 		AcceptStates: n.AcceptStates,
+		DeadState:    -1,
 	}
 }
