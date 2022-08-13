@@ -9,12 +9,12 @@ const useFANoEpsilon = apiRes => {
     }
 
     const nodeList = []
-    const startStates = apiRes?.startStates || []
-    const acceptStates = apiRes?.acceptStates || []
+    const startState = apiRes?.startState
+    const acceptStates = apiRes?.acceptStates
 
     for (let id of apiRes?.nodes) {
       const item = { id, label: `s${id}`}
-      if (startStates.includes(id)) {
+      if (startState == id) {
         item.color = {
           background: "red",
           border: "red",
@@ -32,7 +32,7 @@ const useFANoEpsilon = apiRes => {
           color: "#fff",
         }
       }
-      if (acceptStates.includes(id) && startStates.includes(id)) {
+      if (acceptStates.includes(id) && startState == id) {
         item.color = {
           background: "green",
           border: "green",
@@ -41,14 +41,28 @@ const useFANoEpsilon = apiRes => {
           color: "#fff",
         }
       }
+      if (id === apiRes?.deadState) {
+        item.color = {
+          background: "black",
+          border: "black",
+        }
+        item.font = {
+          color: "#fff",
+        }
+      }
       nodeList.push(item)
     }
+
+
 
     // create an array with nodes
     const nodes = new vis.DataSet(nodeList)
 
     // create an array with edges
-    const edges = new vis.DataSet(apiRes.edges)
+    const newEdges = apiRes.edges.filter(obj => {
+      return obj.from != apiRes.deadState
+    })
+    const edges = new vis.DataSet(newEdges)
 
     // create a network
     const container = document.getElementById("fa")

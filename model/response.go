@@ -20,16 +20,10 @@ type Edge struct {
 	Label string `json:"label"`
 }
 
-type DrawNFAResponse struct {
+type DrawFAResponse struct {
 	Edges        []*Edge `json:"edges"`
 	Nodes        []int   `json:"nodes"`
-	StartStates  []int   `json:"startStates"`
+	StartState   int     `json:"startState"`
 	AcceptStates []int   `json:"acceptStates"`
-}
-
-type DrawDFAResponse struct {
-	Edges        []*Edge `json:"edges"`
-	Nodes        []int   `json:"nodes"`
-	StartStates  []int   `json:"startStates"`
-	AcceptStates []int   `json:"acceptStates"`
+	DeadState    int     `json:"deadState"`
 }

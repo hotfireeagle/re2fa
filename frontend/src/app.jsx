@@ -42,7 +42,7 @@ export default function App() {
             Generate FA
           </button>
           <button
-            onClick={event => fetchFA(event, "/api/generateFANoEpsilon", setFaNoEpsilonApiRes)}
+            onClick={event => fetchFA(event, "/api/generateDFA", setFaNoEpsilonApiRes)}
             className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
             Generate FA But No Epsilon

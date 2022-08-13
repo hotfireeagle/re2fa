@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+var idCount int
+var epsilonSymbol = "ε"
+
 // 操作符优先级
 var operatorPriority = map[rune]int{
 	'*': 4,
@@ -17,6 +20,7 @@ var operatorPriority = map[rune]int{
 
 var operatorStack *runeStack
 var postfixResult strings.Builder
+var inputSymbolAddedMap map[string]bool
 
 func re2postfix(re string) string {
 	operatorStack = runeStackConstructor()
@@ -117,14 +121,12 @@ func (s *runeStack) isEmpty() bool {
 }
 
 type stateStack struct {
-	// vals []*State
 	vals []int
 }
 
 func stateStackConstructor() *stateStack {
 	return &stateStack{
 		vals: make([]int, 0),
-		// vals: make([]*State, 0),
 	}
 }
 
@@ -139,20 +141,20 @@ func (s *stateStack) out() int {
 }
 
 type NFA struct {
-	States        []int                    // 状态slice
+	States        []int
 	InputSymbols  []string                 // 输入inputSymbol
 	TransitionMap map[int]map[string][]int // 状态转移函数
-	StartStates   []int                    // 开始状态
+	StartState    int                      // 开始状态
 	AcceptStates  []int                    // 接受状态
 	BeginEndPairs map[int]int              // 一对状态的开始和结束
 }
 
 func NewNFA() *NFA {
+	inputSymbolAddedMap = make(map[string]bool)
 	return &NFA{
 		States:        make([]int, 0),
 		InputSymbols:  make([]string, 0),
 		TransitionMap: make(map[int]map[string][]int),
-		StartStates:   make([]int, 0),
 		AcceptStates:  make([]int, 0),
 		BeginEndPairs: make(map[int]int),
 	}
@@ -165,10 +167,14 @@ func (n *NFA) AddState() int {
 }
 
 func (n *NFA) AddInputSymbol(inputSymbol string) {
-	n.InputSymbols = append(n.InputSymbols, inputSymbol)
+	if !inputSymbolAddedMap[inputSymbol] {
+		n.InputSymbols = append(n.InputSymbols, inputSymbol)
+		inputSymbolAddedMap[inputSymbol] = true
+	}
 }
 
 func (n *NFA) AddTransition(inputSymbol string, fromStateId int, toStateId int) {
+	n.AddInputSymbol(inputSymbol)
 	if _, ok := n.TransitionMap[fromStateId]; !ok {
 		n.TransitionMap[fromStateId] = make(map[string][]int)
 	}
@@ -188,21 +194,12 @@ func (n *NFA) GetEndState(beginState int) int {
 	return n.BeginEndPairs[beginState]
 }
 
-func (n *NFA) AddStartState(stateId int) {
-	n.StartStates = append(n.StartStates, stateId)
+func (n *NFA) SetStartState(stateId int) {
+	n.StartState = stateId
 }
 
 func (n *NFA) AddAcceptState(stateId int) {
 	n.AcceptStates = append(n.AcceptStates, stateId)
-}
-
-var idCount int
-var epsilonSymbol = "ε"
-
-type State struct {
-	Id          int                 `json:"id"`
-	Transitions map[string][]*State `json:"transitions"`
-	End         *State              `json:"end"`
 }
 
 func stateFactory() int {
@@ -211,36 +208,10 @@ func stateFactory() int {
 	return result
 }
 
-func stateConstructor() *State {
-	state := &State{
-		Id:          idCount,
-		Transitions: make(map[string][]*State),
-	}
-	idCount += 1
-	return state
-}
-
-func (s *State) setEnd(end *State) {
-	s.End = end
-}
-
-func (s *State) addTransition(input string, next *State) {
-	if s.Transitions[input] == nil {
-		s.Transitions[input] = make([]*State, 0)
-	}
-	s.Transitions[input] = append(s.Transitions[input], next)
-}
-
-type Nfa struct {
-	StartState *State `json:"startState"`
-	EndState   *State `json:"endState"`
-}
-
 func Re2nfaConstructor(regexp string) *NFA {
 	idCount = 0
 
 	n := NewNFA()
-	// n := &Nfa{}
 
 	postfix := re2postfix(regexp)
 
@@ -259,9 +230,6 @@ func (n *NFA) Postfix2NFA(postfix string) {
 
 			n.AddTransition(epsilonSymbol, n.GetEndState(leftState), rightState)
 			n.SetBeginEndPairs(leftState, n.GetEndState(rightState))
-			// epsilonSymbol := "-1"
-			// leftState.End.addTransition(epsilonSymbol, rightState)
-			// leftState.End = rightState.End
 
 			stateStack.in(leftState)
 		} else if character == '|' {
@@ -283,23 +251,6 @@ func (n *NFA) Postfix2NFA(postfix string) {
 			n.AddTransition(epsilonSymbol, leftStateEnd, newEnd)
 
 			stateStack.in(newBegin)
-
-			// newBegin := stateConstructor()
-			// newEnd := stateConstructor()
-			// newBegin.setEnd(newEnd)
-
-			// epsilonSymbol := "-1"
-
-			// newBegin.addTransition(epsilonSymbol, leftState)
-			// newBegin.addTransition(epsilonSymbol, rightState)
-
-			// rightStateEnd := rightState.End
-			// leftStateEnd := leftState.End
-
-			// rightStateEnd.addTransition(epsilonSymbol, newEnd)
-			// leftStateEnd.addTransition(epsilonSymbol, newEnd)
-
-			// stateStack.in(newBegin)
 		} else if character == '*' {
 			state := stateStack.out()
 
@@ -315,21 +266,6 @@ func (n *NFA) Postfix2NFA(postfix string) {
 			n.AddTransition(epsilonSymbol, newBegin, newEnd)
 
 			stateStack.in(newBegin)
-
-			// newBegin := stateConstructor()
-			// newEnd := stateConstructor()
-			// newBegin.setEnd(newEnd)
-
-			// epsilonSymbol := "-1"
-
-			// stateEnd := state.End
-
-			// newBegin.addTransition(epsilonSymbol, state)
-			// stateEnd.addTransition(epsilonSymbol, state)
-			// stateEnd.addTransition(epsilonSymbol, newEnd)
-			// newBegin.addTransition(epsilonSymbol, newEnd)
-
-			// stateStack.in(newBegin)
 		} else {
 			beginStateId := n.AddState()
 			endStateId := n.AddState()
@@ -338,30 +274,15 @@ func (n *NFA) Postfix2NFA(postfix string) {
 			stateStack.in(beginStateId)
 
 			n.AddTransition(string(character), beginStateId, endStateId)
-			// begin := stateConstructor()
-			// end := stateConstructor()
-			// begin.setEnd(end)
-
-			// characterSymbol := string(character)
-
-			// begin.addTransition(characterSymbol, end)
-
-			// stateStack.in(begin)
 		}
 	}
 
 	startState := stateStack.out()
-	n.AddStartState(startState)
+	n.SetStartState(startState)
 	n.AddAcceptState(n.GetEndState(startState))
-
-	// state := stateStack.out()
-
-	// n.StartState = state
-	// n.EndState = state.End
 }
 
-// what's frontend need?
-func (n *NFA) ConvertToJSON() *model.DrawNFAResponse {
+func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
 	edges := make([]*model.Edge, 0)
 
 	for startStateId, pathMap := range n.TransitionMap {
@@ -377,60 +298,10 @@ func (n *NFA) ConvertToJSON() *model.DrawNFAResponse {
 		}
 	}
 
-	return &model.DrawNFAResponse{
+	return &model.DrawFAResponse{
 		Edges:        edges,
 		Nodes:        n.States,
-		StartStates:  n.StartStates,
+		StartState:   n.StartState,
 		AcceptStates: n.AcceptStates,
 	}
-	// startState := n.StartState
-	// endState := n.EndState
-
-	// startId := startState.Id
-	// endId := endState.Id
-
-	// edges := make([]model.Edge, 0)
-	// visited := make(map[string]bool) // key is fromStateId-inputSymbol-idx
-
-	// var dfs func(s *State)
-
-	// dfs = func(state *State) {
-	// 	if state == nil {
-	// 		return
-	// 	}
-
-	// 	from := state.Id
-
-	// 	for inputSymbol, nextStates := range state.Transitions {
-	// 		for idx, nextState := range nextStates {
-	// 			to := nextState.Id
-	// 			edgeIdx := fmt.Sprintf("%d-%s-%d", from, inputSymbol, idx)
-	// 			if visited[edgeIdx] {
-	// 				continue
-	// 			}
-	// 			visited[edgeIdx] = true
-
-	// 			var label string
-	// 			if inputSymbol == "-1" {
-	// 				label = "ε"
-	// 			} else {
-	// 				label = inputSymbol
-	// 			}
-	// 			edges = append(edges, model.Edge{
-	// 				From:  from,
-	// 				To:    to,
-	// 				Label: label,
-	// 			})
-	// 			dfs(nextState)
-	// 		}
-	// 	}
-	// }
-
-	// dfs(startState)
-
-	// return &model.DrawNFAResponse{
-	// 	Edges:       edges,
-	// 	StartState:  startId,
-	// 	AcceptState: endId,
-	// }
 }
