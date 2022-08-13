@@ -227,7 +227,10 @@ func slice2str(arr []int) string {
 
 	var result string
 
-	for _, v := range arr {
+	for idx, v := range arr {
+		if idx != 0 {
+			result += ","
+		}
 		s := strconv.Itoa(v)
 		result += s
 	}
