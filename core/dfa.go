@@ -197,6 +197,32 @@ func NewDFAFromNFA(n *NFA) *DFA {
 	return dfa
 }
 
+func (d *DFA) Match(str string) bool {
+	currentState := d.StartState
+
+	for _, character := range str {
+		currentStateTransitions := d.TransitionMap[currentState]
+		currentState = -1
+		for inputSymbol, nextStateId := range currentStateTransitions {
+			if inputSymbol == string(character) {
+				currentState = nextStateId
+				break
+			}
+		}
+	}
+
+	answer := false
+
+	for _, acceptState := range d.AcceptStates {
+		if acceptState == currentState {
+			answer = true
+			break
+		}
+	}
+
+	return answer
+}
+
 func (d *DFA) ConvertToJSON() *model.DrawFAResponse {
 	edges := make([]*model.Edge, 0)
 

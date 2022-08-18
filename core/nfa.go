@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-var idCount int
 var epsilonSymbol = "ε"
 
 // 操作符优先级
@@ -249,6 +248,7 @@ type NFA struct {
 	StartState    int                      // 开始状态
 	AcceptStates  []int                    // 接受状态
 	BeginEndPairs map[int]int              // 一对状态的开始和结束
+	IDCount       int                      // 状态计数器
 }
 
 func NewNFA() *NFA {
@@ -263,8 +263,9 @@ func NewNFA() *NFA {
 }
 
 func (n *NFA) AddState() int {
-	stateId := stateFactory()
+	stateId := n.IDCount
 	n.States = append(n.States, stateId)
+	n.IDCount += 1
 	return stateId
 }
 
@@ -304,15 +305,7 @@ func (n *NFA) AddAcceptState(stateId int) {
 	n.AcceptStates = append(n.AcceptStates, stateId)
 }
 
-func stateFactory() int {
-	result := idCount
-	idCount += 1
-	return result
-}
-
 func Re2nfaConstructor(regexp string) *NFA {
-	idCount = 0
-
 	n := NewNFA()
 
 	postfix := re2postfix(regexp)
@@ -384,6 +377,63 @@ func (n *NFA) Postfix2NFA(postfix string) {
 	n.AddAcceptState(n.GetEndState(startState))
 }
 
+// 判断一个state是否存在epsilon move
+func (n *NFA) CheckStateHasEpsilonTransition(stateId int) bool {
+	if _, ok := n.TransitionMap[stateId]; ok {
+		if _, ok := n.TransitionMap[stateId][epsilonSymbol]; ok {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
+}
+
+// 判断一个状态是否存在有效的转移
+func (n *NFA) CheckStateHasValidTransition(stateId int) bool {
+	if _, ok := n.TransitionMap[stateId]; ok {
+		transitonMap := n.TransitionMap[stateId]
+		result := false
+
+		for inputSymbol, _ := range transitonMap {
+			if inputSymbol != epsilonSymbol {
+				result = true
+				break
+			}
+		}
+
+		return result
+	} else {
+		return false
+	}
+}
+
+// 判断一个状态只存在epsilon transition
+func (n *NFA) CheckStateJustHasEpsilonTransition(stateId int) bool {
+	if _, ok := n.TransitionMap[stateId]; ok {
+		inputSymbolLen := len(n.TransitionMap[stateId])
+		if inputSymbolLen == 1 {
+			if _, ok := n.TransitionMap[stateId][epsilonSymbol]; ok {
+				return true
+			} else {
+				return false
+			}
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
+}
+
+// 是自己所到达的state存在epsilon transition的话才可继续转移
+func (n *NFA) Match(str string) bool {
+	// TODO: 完成NFA的match
+	dfaObj := NewDFAFromNFA(n)
+	return dfaObj.Match(str)
+}
+
 func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
 	edges := make([]*model.Edge, 0)
 
@@ -407,4 +457,47 @@ func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
 		AcceptStates: n.AcceptStates,
 		DeadState:    -1,
 	}
+}
+
+// 返回一个NFA的逆NFA
+// 如果regular language "abc"对应了NFA a
+// 那么NFA a的逆NFA就可以用来表示cba
+func (n *NFA) Reverse() *NFA {
+	reverseNFA := &NFA{
+		States:        n.States,
+		InputSymbols:  n.InputSymbols,
+		BeginEndPairs: n.BeginEndPairs,
+		IDCount:       n.IDCount,
+	}
+
+	newAcceptStates := []int{
+		reverseNFA.StartState,
+	}
+
+	reverseNFA.AcceptStates = newAcceptStates
+	newBeginStateId := reverseNFA.AddState()
+	reverseNFA.StartState = newBeginStateId
+
+	reverseTransitionMap := make(map[int]map[string][]int)
+	for originFromStateId, stateTransitions := range n.TransitionMap {
+		for inputSymbol, originToStateIds := range stateTransitions {
+			for _, originToStateId := range originToStateIds {
+				if _, ok := reverseTransitionMap[originToStateId]; !ok {
+					reverseTransitionMap[originToStateId] = make(map[string][]int)
+				}
+				if _, ok := reverseTransitionMap[originToStateId][inputSymbol]; !ok {
+					reverseTransitionMap[originToStateId][inputSymbol] = make([]int, 0)
+				}
+				reverseTransitionMap[originToStateId][inputSymbol] = append(reverseTransitionMap[originToStateId][inputSymbol], originFromStateId)
+			}
+		}
+	}
+
+	// startState通过epsilon move转移到原来的endState
+	reverseTransitionMap[newBeginStateId] = make(map[string][]int)
+	reverseTransitionMap[newBeginStateId][epsilonSymbol] = n.AcceptStates
+
+	reverseNFA.TransitionMap = reverseTransitionMap
+
+	return reverseNFA
 }
