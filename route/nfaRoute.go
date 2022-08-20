@@ -26,3 +26,24 @@ func generateFA(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(&okRes)
 }
+
+func nfaMatch(ctx *fiber.Ctx) error {
+	postObj := new(model.FAMatchPostData)
+
+	if checkIsUnvalidJson(ctx, postObj) {
+		return nil
+	}
+
+	if checkIsValidateFailed(ctx, postObj) {
+		return nil
+	}
+
+	nfaObj := core.Re2nfaConstructor(postObj.RegExp)
+
+	okRes := model.Response{
+		Code: model.Success,
+		Data: nfaObj.Match(postObj.Text),
+	}
+
+	return ctx.JSON(&okRes)
+}

@@ -15,3 +15,7 @@ html, body {
 .c12 {
   border-left: 1px solid rgb(59 130 246 / 0.5);
 }
+.w90 {
+  width: 90px;
+  box-sizing: content-box;
+}
