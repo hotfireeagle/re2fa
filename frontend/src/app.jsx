@@ -1,25 +1,37 @@
 import { useState } from "react"
 import request from "./utils/request"
 import useFANoEpsilon from "./hooks/useFANoEpsilon"
+import "./index.css"
+
+// TODO: no more tailwind
 
 export default function App() {
   const [regexp, setRegexp] = useState("")
-  const [faNoEpsilonApiRes, setFaNoEpsilonApiRes] = useState(null)
+  const [nfaApiRes, setNfaApiRes] = useState(null)
+  const [dfaApiRes, setDfaApiRes] = useState(null)
 
-  useFANoEpsilon(faNoEpsilonApiRes)
+  useFANoEpsilon(nfaApiRes)
+  useFANoEpsilon(dfaApiRes)
 
   const regexpChangeInputHandler = event => {
     setRegexp(event.target.value)
   }
 
-  const fetchFA = (event, api, updater) => {
+  const fetchFA = event => {
     event.preventDefault()
-    let finalResult = null
-    return request(api, { regexp }).then(result => {
-      finalResult = result
-    }).finally(() => {
-      updater(finalResult)
+    const urls = [
+      { api: "/api/generateFA", id: "nfa", cb: setNfaApiRes, },
+      { api: "/api/generateDFA", id: "dfa", cb: setDfaApiRes, },
+    ]
+    const requests = urls.map(obj => {
+      let finalResult = null
+      return request(obj.api, { regexp }).then(result => {
+        finalResult = result
+      }).finally(() => {
+        obj.cb({ ui: finalResult, id: obj.id })
+      })
     })
+    return Promise.all(requests)
   }
 
   return (
@@ -33,20 +45,19 @@ export default function App() {
             className="border w-96 max-w-none p-2 px-3 rounded-lg mr-6 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
           />
           <button
-            onClick={event => fetchFA(event, "/api/generateFA", setFaNoEpsilonApiRes)}
+            onClick={event => fetchFA(event)}
             className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
           >
-            Generate NFA
-          </button>
-          <button
-            onClick={event => fetchFA(event, "/api/generateDFA", setFaNoEpsilonApiRes)}
-            className="bg-blue-600 p-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
-          >
-            Generate DFA
+            Generate FA
           </button>
         </div>
       </form>
-      <div id="fa" className="flex-grow bg-white" />
+      <div className="flex-grow bg-white flex flex-row">
+        <div id="nfa" className="c1 c11">
+        </div>
+        <div id="dfa" className="c1 c12">
+        </div>
+      </div>
     </div>
   )
 }

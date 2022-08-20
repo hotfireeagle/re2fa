@@ -2,11 +2,13 @@ import { useEffect } from "react"
 import vis from "vis-network/dist/vis-network.esm"
 import { options } from "../utils/constant"
 
-const useFANoEpsilon = apiRes => {
+const useFANoEpsilon = obj => {
   useEffect(() => {
-    if (!apiRes) {
+    if (!obj) {
       return
     }
+
+    const apiRes = obj.ui
 
     const nodeList = []
     const startState = apiRes?.startState
@@ -81,11 +83,11 @@ const useFANoEpsilon = apiRes => {
     const edges = new vis.DataSet(edgeList)
 
     // create a network
-    const container = document.getElementById("fa")
+    const container = document.getElementById(obj.id)
     const data = { nodes: nodes, edges: edges }
 
     new vis.Network(container, data, options)
-  }, [apiRes])
+  }, [obj])
 }
 
 export default useFANoEpsilon

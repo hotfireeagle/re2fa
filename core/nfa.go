@@ -17,10 +17,6 @@ var operatorPriority = map[rune]int{
 	'(': 1,
 }
 
-var operatorStack *runeStack
-var postfixResult strings.Builder
-var inputSymbolAddedMap map[string]bool
-
 func isNum(r byte) bool {
 	return r >= '0' && r <= '9'
 }
@@ -124,10 +120,28 @@ func preConvert(str string) string {
 func re2postfix(re string) string {
 	re2 := preConvert(re)
 
-	operatorStack = runeStackConstructor()
-	postfixResult.Reset()
+	operatorStack := runeStackConstructor()
+	var postfixResult strings.Builder
 
 	shouldAddConcat := false
+
+	pushOperator := func(operator rune) {
+		currentPriority := operatorPriority[operator]
+
+		for !operatorStack.isEmpty() {
+			top := operatorStack.out()
+			topPriority := operatorPriority[top]
+
+			if topPriority >= currentPriority {
+				postfixResult.WriteRune(top)
+			} else {
+				operatorStack.in(top)
+				break
+			}
+		}
+
+		operatorStack.in(operator)
+	}
 
 	for _, ch := range re2 {
 		if ch == '*' || ch == '?' || ch == '+' {
@@ -179,24 +193,6 @@ func re2postfix(re string) string {
 	return postfixResult.String()
 }
 
-func pushOperator(operator rune) {
-	currentPriority := operatorPriority[operator]
-
-	for !operatorStack.isEmpty() {
-		top := operatorStack.out()
-		topPriority := operatorPriority[top]
-
-		if topPriority >= currentPriority {
-			postfixResult.WriteRune(top)
-		} else {
-			operatorStack.in(top)
-			break
-		}
-	}
-
-	operatorStack.in(operator)
-}
-
 type runeStack struct {
 	vals []rune
 }
@@ -242,23 +238,24 @@ func (s *stateStack) out() int {
 }
 
 type NFA struct {
-	States        []int
-	InputSymbols  []string                 // 输入inputSymbol
-	TransitionMap map[int]map[string][]int // 状态转移函数
-	StartState    int                      // 开始状态
-	AcceptStates  []int                    // 接受状态
-	BeginEndPairs map[int]int              // 一对状态的开始和结束
-	IDCount       int                      // 状态计数器
+	States              []int
+	InputSymbols        []string                 // 输入inputSymbol
+	TransitionMap       map[int]map[string][]int // 状态转移函数
+	StartState          int                      // 开始状态
+	AcceptStates        []int                    // 接受状态
+	BeginEndPairs       map[int]int              // 一对状态的开始和结束
+	IDCount             int                      // 状态计数器
+	inputSymbolAddedMap map[string]bool
 }
 
 func NewNFA() *NFA {
-	inputSymbolAddedMap = make(map[string]bool)
 	return &NFA{
-		States:        make([]int, 0),
-		InputSymbols:  make([]string, 0),
-		TransitionMap: make(map[int]map[string][]int),
-		AcceptStates:  make([]int, 0),
-		BeginEndPairs: make(map[int]int),
+		States:              make([]int, 0),
+		InputSymbols:        make([]string, 0),
+		TransitionMap:       make(map[int]map[string][]int),
+		AcceptStates:        make([]int, 0),
+		BeginEndPairs:       make(map[int]int),
+		inputSymbolAddedMap: make(map[string]bool),
 	}
 }
 
@@ -270,9 +267,9 @@ func (n *NFA) AddState() int {
 }
 
 func (n *NFA) AddInputSymbol(inputSymbol string) {
-	if !inputSymbolAddedMap[inputSymbol] {
+	if !n.inputSymbolAddedMap[inputSymbol] {
 		n.InputSymbols = append(n.InputSymbols, inputSymbol)
-		inputSymbolAddedMap[inputSymbol] = true
+		n.inputSymbolAddedMap[inputSymbol] = true
 	}
 }
 

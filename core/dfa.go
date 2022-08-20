@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-var dfaStatesCount int
-
 type DFA struct {
 	States          []int
 	InputSymbols    []string
@@ -17,10 +15,10 @@ type DFA struct {
 	AcceptStates    []int
 	StateIdToSetMap map[string]int
 	DeadStateId     int
+	dfaStatesCount  int
 }
 
 func NewDFA() *DFA {
-	dfaStatesCount = 0
 	return &DFA{
 		States:          make([]int, 0),
 		AcceptStates:    make([]int, 0),
@@ -48,22 +46,22 @@ func (d *DFA) AddState(nfaStates []int) (int, bool) {
 		return d.StateIdToSetMap[idStr], true
 	}
 
-	stateId := dfaStatesCount
+	stateId := d.dfaStatesCount
 	d.States = append(d.States, stateId)
 	d.AddStateIdToSetMap(stateId, idStr)
 
-	dfaStatesCount += 1
+	d.dfaStatesCount += 1
 	return stateId, false
 }
 
 func (d *DFA) AddDeadState() (int, bool) {
-	sId := dfaStatesCount
+	sId := d.dfaStatesCount
 
 	if d.DeadStateId == -1 {
 		d.DeadStateId = sId
 		d.States = append(d.States, sId)
 		d.AddTransitionForDeadState()
-		dfaStatesCount += 1
+		d.dfaStatesCount += 1
 		return sId, false
 	} else {
 		return d.DeadStateId, true

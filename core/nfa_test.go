@@ -91,6 +91,10 @@ func TestNfaComplex(t *testing.T) {
 		t.Error("nfa match error")
 	}
 
+	if !nfaObj.Match("126sdjk") {
+		t.Error("126sdjk should match")
+	}
+
 	if nfaObj.Match("121") {
 		t.Error("121 should't match")
 	}
