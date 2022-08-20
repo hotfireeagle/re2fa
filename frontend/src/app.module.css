@@ -1,0 +1,29 @@
+.pageContainer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header, .footer {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  flex-shrink: 0;
+}
+.contentArea {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+}
+.fa {
+  height: calc(100vh - 120px);
+  box-sizing: border-box;
+  width: 50%;
+}
+.fa1 {
+  background: #e8e8e8;
+}
+.fa2 {
+  background: #f2f2f2;
+}

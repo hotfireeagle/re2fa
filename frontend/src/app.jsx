@@ -1,132 +1,117 @@
 import { useState } from "react"
 import request from "./utils/request"
+import { Form, Input, Button, message, notification, Select } from "antd"
 import useFANoEpsilon from "./hooks/useFANoEpsilon"
-import "./index.css"
-
+import styles from "./app.module.css"
 
 export default function App() {
-  const [regexp, setRegexp] = useState("")
-  const [str, setStr] = useState("")
+  const [headerFormInstance] = Form.useForm()
+  const [footerFormInstance] = Form.useForm()
   const [nfaApiRes, setNfaApiRes] = useState(null)
   const [dfaApiRes, setDfaApiRes] = useState(null)
-
-  const successBgColor = "bg-green-200"
-  const failedBgColor = "bg-red-200"
 
   useFANoEpsilon(nfaApiRes)
   useFANoEpsilon(dfaApiRes)
 
-  const regexpChangeInputHandler = event => {
-    setRegexp(event.target.value)
-  }
-
-  const strChangeHandler = event => {
-    setStr(event.target.value)
-  }
-
-  const fetchFA = event => {
-    event.preventDefault()
+  const fetchFA = async () => {
+    const postData = await headerFormInstance.validateFields()
     const urls = [
       { api: "/api/generateFA", id: "nfa", cb: setNfaApiRes, },
       { api: "/api/generateDFA", id: "dfa", cb: setDfaApiRes, },
     ]
+    const hide = message.loading({ content: "processing...", duration: 0 })
     const requests = urls.map(obj => {
       let finalResult = null
-      return request(obj.api, { regexp }).then(result => {
+      return request(obj.api, postData).then(result => {
         finalResult = result
       }).finally(() => {
+        hide()
         obj.cb({ ui: finalResult, id: obj.id })
       })
     })
     return Promise.all(requests)
   }
 
-  const faMatchCallback = (id, result) => {
-    const dom = document.getElementById(id)
-    if (result) {
-      dom.classList.remove(failedBgColor)
-      dom.classList.add(successBgColor)
-    } else {
-      dom.classList.remove(successBgColor)
-      dom.classList.add(failedBgColor)
+  const matchFeedback = (id, result) => {
+    const posMap = {
+      nfa: "bottomLeft",
+      dfa: "bottomRight",
     }
+    const resultMap = new Map().set(true, "success").set(false, "error")
+    notification[resultMap.get(result)]({
+      message: result ? "Match!" : "Unmatch!",
+      placement: posMap[id],
+    })
   }
 
-  const matchHandler = event => {
-    event.preventDefault()
+  const matchHandler = () => {
+    const text = footerFormInstance.getFieldValue("text")
+    const regexp = headerFormInstance.getFieldValue("regexp")
     const urls = [
       { api: "/api/nfaMatch", id: "nfa", },
       { api: "/api/dfaMatch", id: "dfa", },
     ]
     const fetchs = urls.map(obj => {
       let matchResult = false
-      const postData = { regexp, text: str }
+      const postData = { regexp, text }
       return request(obj.api, postData).then(result => {
-        console.log(obj.api, result)
         matchResult = result
       }).finally(() => {
-        faMatchCallback(obj.id, matchResult)
+        matchFeedback(obj.id, matchResult)
       })
     })
     return Promise.all(fetchs)
   }
 
-  const resetHandler = event => {
-    event.preventDefault()
-    const ids = ["nfa", "dfa"]
-    ids.forEach(id => {
-      const dom = document.getElementById(id)
-      dom.classList.remove(failedBgColor)
-      dom.classList.remove(successBgColor)
-    })
-  }
-
   return (
-    <div className="flex flex-col container bg-gray-50 w-screen max-w-none h-screen">
-      <form className="w-screen p-5 bg-blue-600 bg-opacity-60">
-        <div className="text-center">
-          <input
-            placeholder="Enter regexp"
-            value={regexp}
-            onChange={regexpChangeInputHandler}
-            className="border w-96 max-w-none p-2 px-3 rounded-lg mr-6 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-          />
-          <button
-            onClick={event => fetchFA(event)}
-            className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white"
-          >
-            Generate FA
-          </button>
-        </div>
-      </form>
-      <div className="flex-grow bg-white flex flex-row">
-        <div id="nfa" className="transition-all c1 c11">
-        </div>
-        <div id="dfa" className="transition-all c1 c12">
-        </div>
+    <div className={styles.pageContainer}>
+      <div className={styles.header}>
+        <Form
+          form={headerFormInstance}
+          layout="inline"
+          onFinish={fetchFA}
+        >
+          <Form.Item name="mode">
+            <Select style={{ width: 200 }}>
+              <Select.Option>Generate DFA And NFA</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="regexp">
+            <Input placeholder="Enter RegExp" />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+            >
+              Generate DFA And NFA
+            </Button>
+          </Form.Item>
+        </Form>
       </div>
-      <form className="w-screen p-5 bg-blue-600 bg-opacity-60">
-        <div className="text-center">
-          <button
-            onClick={event => resetHandler(event)}
-            className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white w90"
-          >
-            Reset
-          </button>
-          <input
-            placeholder="Enter string"
-            value={str}
-            onChange={strChangeHandler}
-            className="border w-96 max-w-none p-2 px-3 rounded-lg mr-6 border-transparent focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-          />
-          <button
-            onClick={event => matchHandler(event)}
-            className="bg-blue-600 p-2 px-3 rounded-lg mr-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 text-white w90"
-          >
-            Test Match
-          </button>
-        </div>
-      </form>
+      <div className={styles.contentArea}>
+        <div id="nfa" className={`${styles.fa} ${styles.fa1}`} />
+        <div id="dfa" className={`${styles.fa} ${styles.fa2}`} />
+      </div>
+      <div className={styles.footer}>
+        <Form
+          form={footerFormInstance}
+          layout="inline"
+          onFinish={matchHandler}
+        >
+          <Form.Item name="text">
+            <Input placeholder="Enter Text" />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+            >
+              Go To Match
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
     </div>
   )
 }
