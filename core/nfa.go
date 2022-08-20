@@ -358,6 +358,36 @@ func (n *NFA) Postfix2NFA(postfix string) {
 			n.AddTransition(epsilonSymbol, newBegin, newEnd)
 
 			stateStack.in(newBegin)
+		} else if character == '?' {
+			// zero or one time
+			state := stateStack.out()
+
+			newBegin := n.AddState()
+			newEnd := n.AddState()
+			n.SetBeginEndPairs(newBegin, newEnd)
+
+			stateEnd := n.GetEndState(state)
+
+			n.AddTransition(epsilonSymbol, newBegin, state)
+			n.AddTransition(epsilonSymbol, stateEnd, newEnd)
+			n.AddTransition(epsilonSymbol, newBegin, newEnd)
+
+			stateStack.in(newBegin)
+		} else if character == '+' {
+			// one or more time
+			state := stateStack.out()
+
+			newBegin := n.AddState()
+			newEnd := n.AddState()
+			n.SetBeginEndPairs(newBegin, newEnd)
+
+			stateEnd := n.GetEndState(state)
+
+			n.AddTransition(epsilonSymbol, newBegin, state)
+			n.AddTransition(epsilonSymbol, stateEnd, state)
+			n.AddTransition(epsilonSymbol, stateEnd, newEnd)
+
+			stateStack.in(newBegin)
 		} else {
 			beginStateId := n.AddState()
 			endStateId := n.AddState()
