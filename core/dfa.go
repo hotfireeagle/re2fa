@@ -269,3 +269,38 @@ func getKeys(m map[int]bool) []int {
 	}
 	return keys
 }
+
+func (d *DFA) Suffix() *NFA {
+	nfa := NewNFA()
+	nfa.InputSymbols = d.InputSymbols
+	nfa.InputSymbols = append(nfa.InputSymbols, epsilonSymbol)
+	nfa.States = d.States
+	nfa.InputSymbols = d.InputSymbols
+	nfa.AcceptStates = d.AcceptStates
+	nfa.IDCount = d.dfaStatesCount
+
+	newBeginStateId := nfa.AddState()
+	nfa.SetStartState(newBeginStateId)
+
+	transitionMap := make(map[int]map[string][]int)
+	for fromStateId, transitions := range d.TransitionMap {
+		for inputSymbol, toState := range transitions {
+			if _, ok := transitionMap[fromStateId]; !ok {
+				transitionMap[fromStateId] = make(map[string][]int)
+			}
+
+			if _, ok := transitionMap[fromStateId][inputSymbol]; !ok {
+				transitionMap[fromStateId][inputSymbol] = make([]int, 0)
+			}
+
+			transitionMap[fromStateId][inputSymbol] = append(transitionMap[fromStateId][inputSymbol], toState)
+		}
+	}
+
+	transitionMap[newBeginStateId] = make(map[string][]int)
+	transitionMap[newBeginStateId][epsilonSymbol] = make([]int, 0)
+
+	transitionMap[newBeginStateId][epsilonSymbol] = append(transitionMap[newBeginStateId][epsilonSymbol], nfa.States...)
+
+	return nfa
+}
