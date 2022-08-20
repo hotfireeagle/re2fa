@@ -27,3 +27,20 @@ type DrawFAResponse struct {
 	AcceptStates []int   `json:"acceptStates"`
 	DeadState    int     `json:"deadState"`
 }
+
+type FAItem struct {
+	FA    *DrawFAResponse `json:"fa"`
+	Title string          `json:"title"`
+}
+
+func NewDoubleFA(fa1 *DrawFAResponse, t1 string, fa2 *DrawFAResponse, t2 string) interface{} {
+	result := make([]*FAItem, 0)
+	result = append(result, &FAItem{fa1, t1})
+	result = append(result, &FAItem{fa2, t2})
+	return result
+}
+
+type ApiListItem struct {
+	Name string `json:"name"`
+	Api  string `json:"api"`
+}

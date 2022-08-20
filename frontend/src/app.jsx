@@ -1,35 +1,52 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import request from "./utils/request"
 import { Form, Input, Button, message, notification, Select } from "antd"
 import useFANoEpsilon from "./hooks/useFANoEpsilon"
 import styles from "./app.module.css"
+import { useGet } from "@/hooks/useGet"
 
 export default function App() {
   const [headerFormInstance] = Form.useForm()
   const [footerFormInstance] = Form.useForm()
   const [nfaApiRes, setNfaApiRes] = useState(null)
   const [dfaApiRes, setDfaApiRes] = useState(null)
+  const [apiListRes, loadingApiListRes] = useGet("/api/apiList", [])
+  const [activeApiObj, setActiveApiObj] = useState({})
+
+  useEffect(() => {
+    const obj = apiListRes?.[0] || {}
+    setActiveApiObj(obj)
+    headerFormInstance.setFieldsValue({ mode: obj.api })
+  }, [apiListRes])
 
   useFANoEpsilon(nfaApiRes)
   useFANoEpsilon(dfaApiRes)
 
-  const fetchFA = async () => {
-    const postData = await headerFormInstance.validateFields()
-    const urls = [
-      { api: "/api/generateFA", id: "nfa", cb: setNfaApiRes, },
-      { api: "/api/generateDFA", id: "dfa", cb: setDfaApiRes, },
-    ]
+  const actionHandler = () => {
+    const postData = headerFormInstance.getFieldsValue()
     const hide = message.loading({ content: "processing...", duration: 0 })
-    const requests = urls.map(obj => {
-      let finalResult = null
-      return request(obj.api, postData).then(result => {
-        finalResult = result
-      }).finally(() => {
-        hide()
-        obj.cb({ ui: finalResult, id: obj.id })
-      })
+    return request(activeApiObj.api, postData).then(res => {
+      console.log("res", res)
+      setNfaApiRes({ ui: res[0].fa, id: "nfa" })
+      setDfaApiRes({ ui: res[1].fa, id: "dfa" })
+    }).finally(() => {
+      hide()
     })
-    return Promise.all(requests)
+    // const urls = [
+    //   { api: "/api/generateFA", id: "nfa", cb: setNfaApiRes, },
+    //   { api: "/api/generateDFA", id: "dfa", cb: setDfaApiRes, },
+    // ]
+    // const hide = message.loading({ content: "processing...", duration: 0 })
+    // const requests = urls.map(obj => {
+    //   let finalResult = null
+    //   return request(obj.api, postData).then(result => {
+    //     finalResult = result
+    //   }).finally(() => {
+    //     hide()
+    //     obj.cb({ ui: finalResult, id: obj.id })
+    //   })
+    // })
+    // return Promise.all(requests)
   }
 
   const matchFeedback = (id, result) => {
@@ -69,11 +86,17 @@ export default function App() {
         <Form
           form={headerFormInstance}
           layout="inline"
-          onFinish={fetchFA}
+          onFinish={actionHandler}
         >
           <Form.Item name="mode">
-            <Select style={{ width: 200 }}>
-              <Select.Option>Generate DFA And NFA</Select.Option>
+            <Select style={{ width: 200 }} loading={loadingApiListRes}>
+              {
+                apiListRes.map(item => (
+                  <Select.Option value={item.api} key={item.api}>
+                    {item.name}
+                  </Select.Option>
+                ))
+              }
             </Select>
           </Form.Item>
           <Form.Item name="regexp">
@@ -84,7 +107,7 @@ export default function App() {
               type="primary"
               htmlType="submit"
             >
-              Generate DFA And NFA
+              Action
             </Button>
           </Form.Item>
         </Form>
