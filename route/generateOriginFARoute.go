@@ -18,7 +18,7 @@ func generateOriginFARoute(ctx *fiber.Ctx) error {
 		return nil
 	}
 
-	response := service.GenerateOriginFAService(obj)
+	faItems := service.GenerateOriginFAService(obj.RegExp)
 
-	return ctx.JSON(response)
+	return ctx.JSON(getOkResponseFromFaItems(faItems))
 }

@@ -5,12 +5,12 @@ import (
 	"re2fa/model"
 )
 
-func GenerateOriginFAService(obj *model.GenerateFAPostData) *model.Response {
-	nfaObj := core.Re2nfaConstructor(obj.RegExp)
+func GenerateOriginFAService(regexp string) []*model.FAItem {
+	nfaObj := core.Re2nfaConstructor(regexp)
 	dfaObj := core.NewDFAFromNFA(nfaObj)
 
-	return &model.Response{
-		Code: model.Success,
-		Data: model.NewDoubleFA(dfaObj.ConvertToJSON(), "dfa", nfaObj.ConvertToJSON(), "nfa"),
+	return []*model.FAItem{
+		{FA: nfaObj, Title: "nfa"},
+		{FA: dfaObj, Title: "dfa"},
 	}
 }

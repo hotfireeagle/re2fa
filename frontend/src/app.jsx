@@ -26,8 +26,8 @@ export default function App() {
     const postData = headerFormInstance.getFieldsValue()
     const hide = message.loading({ content: "processing...", duration: 0 })
     return request(activeApiObj.api, postData).then(res => {
-      setFa1Res({ ui: res[0].fa, id: "fa1", title: res[0].title })
-      setFa2Res({ ui: res[1].fa, id: "fa2", title: res[1].title })
+      setFa1Res({ ui: res[0], id: "fa1", title: res[0].title })
+      setFa2Res({ ui: res[1], id: "fa2", title: res[1].title })
     }).finally(() => {
       hide()
     })
@@ -35,8 +35,8 @@ export default function App() {
 
   const matchFeedback = (id, result) => {
     const posMap = {
-      nfa: "bottomLeft",
-      dfa: "bottomRight",
+      fa1: "bottomLeft",
+      fa2: "bottomRight",
     }
     const resultMap = new Map().set(true, "success").set(false, "error")
     notification[resultMap.get(result)]({
@@ -48,20 +48,19 @@ export default function App() {
   const matchHandler = () => {
     const text = footerFormInstance.getFieldValue("text")
     const regexp = headerFormInstance.getFieldValue("regexp")
-    const urls = [
-      { api: "/api/nfaMatch", id: "nfa", },
-      { api: "/api/dfaMatch", id: "dfa", },
-    ]
-    const fetchs = urls.map(obj => {
-      let matchResult = false
-      const postData = { regexp, text }
-      return request(obj.api, postData).then(result => {
-        matchResult = result
-      }).finally(() => {
-        matchFeedback(obj.id, matchResult)
-      })
+    const postData = {
+      regexp,
+      text,
+      api: activeApiObj.api,
+    }
+    if (!regexp) {
+      message.error("Please input regexp")
+      return
+    }
+    return request("/api/match", postData).then(res => {
+      matchFeedback("fa1", res[0])
+      matchFeedback("fa2", res[1])
     })
-    return Promise.all(fetchs)
   }
 
   return (

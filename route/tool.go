@@ -25,3 +25,16 @@ func checkIsValidateFailed(ctx *fiber.Ctx, data interface{}) bool {
 	}
 	return false
 }
+
+func getOkResponseFromFaItems(faItems []*model.FAItem) *model.Response {
+	var result = make([]*model.DrawFAResponse, 0)
+	for _, item := range faItems {
+		uiItem := item.FA.ConvertToJSON()
+		uiItem.Title = item.Title
+		result = append(result, uiItem)
+	}
+	return &model.Response{
+		Code: model.Success,
+		Data: result,
+	}
+}
