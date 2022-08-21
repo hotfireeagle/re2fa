@@ -27,3 +27,11 @@
 .fa2 {
   background: #f2f2f2;
 }
+.tagCls {
+  display: flex;
+  flex-direction: row-reverse;
+}
+.fawrapper {
+  width: 100%;
+  height: calc(100% - 22px);
+}

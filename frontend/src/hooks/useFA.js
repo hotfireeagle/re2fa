@@ -1,8 +1,8 @@
 import { useEffect } from "react"
 import vis from "vis-network/dist/vis-network.esm"
-import { options } from "../utils/constant"
+import { options } from "@/utils/constant"
 
-const useFANoEpsilon = obj => {
+const useFA = obj => {
   useEffect(() => {
     if (!obj) {
       return
@@ -90,4 +90,4 @@ const useFANoEpsilon = obj => {
   }, [obj])
 }
 
-export default useFANoEpsilon
+export default useFA

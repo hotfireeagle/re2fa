@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react"
 import request from "./utils/request"
-import { Form, Input, Button, message, notification, Select } from "antd"
-import useFANoEpsilon from "./hooks/useFANoEpsilon"
+import { Form, Input, Button, message, notification, Select, Tag } from "antd"
+import useFA from "@/hooks/useFA"
 import styles from "./app.module.css"
 import { useGet } from "@/hooks/useGet"
 
 export default function App() {
   const [headerFormInstance] = Form.useForm()
   const [footerFormInstance] = Form.useForm()
-  const [nfaApiRes, setNfaApiRes] = useState(null)
-  const [dfaApiRes, setDfaApiRes] = useState(null)
+  const [fa1Res, setFa1Res] = useState(null)
+  const [fa2Res, setFa2Res] = useState(null)
   const [apiListRes, loadingApiListRes] = useGet("/api/apiList", [])
   const [activeApiObj, setActiveApiObj] = useState({})
 
@@ -19,34 +19,18 @@ export default function App() {
     headerFormInstance.setFieldsValue({ mode: obj.api })
   }, [apiListRes])
 
-  useFANoEpsilon(nfaApiRes)
-  useFANoEpsilon(dfaApiRes)
+  useFA(fa1Res)
+  useFA(fa2Res)
 
   const actionHandler = () => {
     const postData = headerFormInstance.getFieldsValue()
     const hide = message.loading({ content: "processing...", duration: 0 })
     return request(activeApiObj.api, postData).then(res => {
-      console.log("res", res)
-      setNfaApiRes({ ui: res[0].fa, id: "nfa" })
-      setDfaApiRes({ ui: res[1].fa, id: "dfa" })
+      setFa1Res({ ui: res[0].fa, id: "fa1", title: res[0].title })
+      setFa2Res({ ui: res[1].fa, id: "fa2", title: res[1].title })
     }).finally(() => {
       hide()
     })
-    // const urls = [
-    //   { api: "/api/generateFA", id: "nfa", cb: setNfaApiRes, },
-    //   { api: "/api/generateDFA", id: "dfa", cb: setDfaApiRes, },
-    // ]
-    // const hide = message.loading({ content: "processing...", duration: 0 })
-    // const requests = urls.map(obj => {
-    //   let finalResult = null
-    //   return request(obj.api, postData).then(result => {
-    //     finalResult = result
-    //   }).finally(() => {
-    //     hide()
-    //     obj.cb({ ui: finalResult, id: obj.id })
-    //   })
-    // })
-    // return Promise.all(requests)
   }
 
   const matchFeedback = (id, result) => {
@@ -113,8 +97,26 @@ export default function App() {
         </Form>
       </div>
       <div className={styles.contentArea}>
-        <div id="nfa" className={`${styles.fa} ${styles.fa1}`} />
-        <div id="dfa" className={`${styles.fa} ${styles.fa2}`} />
+        <div className={`${styles.fa} ${styles.fa1}`}>
+          <div id="fa1" className={styles.fawrapper} />
+          <div className={styles.tagCls}>
+            {
+              fa1Res?.title ? (
+                <Tag color="#108ee9" style={{ marginRight:0 }}>{fa1Res.title}</Tag>
+              ) : null
+            }
+          </div>
+        </div>
+        <div className={`${styles.fa} ${styles.fa2}`}>
+          <div id="fa2" className={styles.fawrapper} />
+          <div className={styles.tagCls}>
+            {
+              fa2Res?.title ? (
+                <Tag color="#108ee9" style={{ marginRight:0 }}>{fa2Res.title}</Tag>
+              ) : null
+            }
+          </div>
+        </div>
       </div>
       <div className={styles.footer}>
         <Form
