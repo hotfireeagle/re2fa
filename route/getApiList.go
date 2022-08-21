@@ -9,6 +9,7 @@ import (
 func getApiList(ctx *fiber.Ctx) error {
 	result := []*model.ApiListItem{
 		{Name: "GenerateOriginFA", Api: "/api/generateOriginFA"},
+		{Name: "GenerateNFAAndSuffixNFA", Api: "/api/generateNFAAndSuffixNFA"},
 	}
 
 	res := &model.Response{

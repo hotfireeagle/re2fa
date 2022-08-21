@@ -20,8 +20,12 @@ func faMatch(ctx *fiber.Ctx) error {
 
 	var faItems []*model.FAItem
 
-	if postObj.Api == "/api/generateOriginFA" {
+	api := postObj.Api
+
+	if api == "/api/generateOriginFA" {
 		faItems = service.GenerateOriginFAService(postObj.RegExp)
+	} else if api == "/api/generateNFAAndSuffixNFA" {
+		faItems = service.GenerateNfaAndSuffixNfa(postObj.RegExp)
 	}
 
 	answers := make([]bool, 0)

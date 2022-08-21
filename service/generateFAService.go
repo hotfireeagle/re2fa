@@ -14,3 +14,14 @@ func GenerateOriginFAService(regexp string) []*model.FAItem {
 		{FA: dfaObj, Title: "dfa"},
 	}
 }
+
+func GenerateNfaAndSuffixNfa(regexp string) []*model.FAItem {
+	nfaObj := core.Re2nfaConstructor(regexp)
+	dfaObj := core.NewDFAFromNFA(nfaObj)
+	nfa2Obj := dfaObj.Suffix()
+
+	return []*model.FAItem{
+		{FA: nfaObj, Title: "Origin NFA"},
+		{FA: nfa2Obj, Title: "Reverse NFA"},
+	}
+}

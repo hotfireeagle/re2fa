@@ -11,12 +11,10 @@ export default function App() {
   const [fa1Res, setFa1Res] = useState(null)
   const [fa2Res, setFa2Res] = useState(null)
   const [apiListRes, loadingApiListRes] = useGet("/api/apiList", [])
-  const [activeApiObj, setActiveApiObj] = useState({})
 
   useEffect(() => {
     const obj = apiListRes?.[0] || {}
-    setActiveApiObj(obj)
-    headerFormInstance.setFieldsValue({ mode: obj.api })
+    headerFormInstance.setFieldsValue({ api: obj.api })
   }, [apiListRes])
 
   useFA(fa1Res)
@@ -25,7 +23,7 @@ export default function App() {
   const actionHandler = () => {
     const postData = headerFormInstance.getFieldsValue()
     const hide = message.loading({ content: "processing...", duration: 0 })
-    return request(activeApiObj.api, postData).then(res => {
+    return request(postData.api, postData).then(res => {
       setFa1Res({ ui: res[0], id: "fa1", title: res[0].title })
       setFa2Res({ ui: res[1], id: "fa2", title: res[1].title })
     }).finally(() => {
@@ -47,11 +45,10 @@ export default function App() {
 
   const matchHandler = () => {
     const text = footerFormInstance.getFieldValue("text")
-    const regexp = headerFormInstance.getFieldValue("regexp")
+    const headerFormObj = headerFormInstance.getFieldsValue()
     const postData = {
-      regexp,
+      ...(headerFormObj || {}),
       text,
-      api: activeApiObj.api,
     }
     if (!regexp) {
       message.error("Please input regexp")
@@ -71,7 +68,7 @@ export default function App() {
           layout="inline"
           onFinish={actionHandler}
         >
-          <Form.Item name="mode">
+          <Form.Item name="api">
             <Select style={{ width: 200 }} loading={loadingApiListRes}>
               {
                 apiListRes.map(item => (

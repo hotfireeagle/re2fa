@@ -301,6 +301,7 @@ func (d *DFA) Suffix() *NFA {
 	transitionMap[newBeginStateId][epsilonSymbol] = make([]int, 0)
 
 	transitionMap[newBeginStateId][epsilonSymbol] = append(transitionMap[newBeginStateId][epsilonSymbol], nfa.States...)
+	nfa.TransitionMap = transitionMap
 
 	return nfa
 }

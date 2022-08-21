@@ -7,5 +7,6 @@ func RegisterRouter(app *fiber.App) {
 
 	apiModule.Get("/apiList", getApiList)
 	apiModule.Post("/generateOriginFA", generateOriginFARoute)
+	apiModule.Post("/generateNFAAndSuffixNFA", generateNFAAndSuffixNFARoute)
 	apiModule.Post("/match", faMatch)
 }
