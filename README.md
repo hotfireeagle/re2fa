@@ -8,3 +8,7 @@
 + [ ] 最小化DFA
 + [ ] benchmark
 + [ ] match过程能否在前端动画化？
+
+### DEMO
+
+![demo](https://s1.ax1x.com/2022/09/09/vLtLGj.png)

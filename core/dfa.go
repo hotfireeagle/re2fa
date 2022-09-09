@@ -270,6 +270,7 @@ func getKeys(m map[int]bool) []int {
 	return keys
 }
 
+// FIXME:
 func (d *DFA) Suffix() *NFA {
 	nfa := NewNFA()
 	nfa.InputSymbols = d.InputSymbols
