@@ -17,32 +17,44 @@ var operatorPriority = map[rune]int{
 	'(': 1,
 }
 
-func isNum(r byte) bool {
+func isNum(r rune) bool {
 	return r >= '0' && r <= '9'
 }
 
-func isBigCharacter(r byte) bool {
+func isBigCharacter(r rune) bool {
 	return r >= 'a' && r <= 'z'
 }
 
-func isSmallestCharacter(r byte) bool {
+func isSmallestCharacter(r rune) bool {
 	return r >= 'A' && r <= 'Z'
 }
 
-// 应该可优化
+// TODO:优化
 func preConvert(str string) string {
 	var result strings.Builder
 	var needAddUnion bool = false
 
 	var doNextWork = func(startPos int) int {
 		var returnIdx int
-		idx := startPos
-		for idx < len(str) {
-			ch := str[idx]
+
+		var firstHitIdx int
+		for i2 := startPos; i2 < len(str); i2++ {
+			if str[i2] == ']' {
+				firstHitIdx = i2
+				break
+			}
+		}
+
+		restStr := str[startPos:]
+		runes := []rune(restStr)
+		idx := 0
+
+		for idx < len(runes) {
+			ch := runes[idx]
 			if ch == '-' {
-				if idx+1 < len(str) {
-					beforeCharacter := str[idx-1]
-					nextCharacter := str[idx+1]
+				if idx+1 < len(runes) {
+					beforeCharacter := runes[idx-1]
+					nextCharacter := runes[idx+1]
 
 					if isNum(beforeCharacter) && isNum(nextCharacter) {
 						n1 := int(beforeCharacter - '0')
@@ -87,13 +99,13 @@ func preConvert(str string) string {
 				}
 			} else if ch == ']' {
 				result.WriteRune(')')
-				returnIdx = idx + 1
+				returnIdx = firstHitIdx + 1
 				break
 			} else {
 				if needAddUnion {
 					result.WriteRune('|')
 				}
-				result.WriteByte(ch)
+				result.WriteRune(ch)
 				idx += 1
 				needAddUnion = true
 			}
@@ -489,6 +501,7 @@ func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
 // 返回一个NFA的逆NFA
 // 如果regular language "abc"对应了NFA a
 // 那么NFA a的逆NFA就可以用来表示cba
+// FIXME: 转换错误
 func (n *NFA) Reverse() *NFA {
 	reverseNFA := &NFA{
 		States:        n.States,
