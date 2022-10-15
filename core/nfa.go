@@ -466,11 +466,88 @@ func (n *NFA) CheckStateJustHasEpsilonTransition(stateId int) bool {
 	}
 }
 
-// 是自己所到达的state存在epsilon transition的话才可继续转移
 func (n *NFA) Match(str string) bool {
-	// TODO: 完成NFA的match
-	dfaObj := NewDFAFromNFA(n)
-	return dfaObj.Match(str)
+	currentStates := make([]int, 0)
+	currentStates = append(currentStates, n.StartState)
+
+	var step = func(currentInputSymbol string) {
+		nextStates := make([]int, 0)
+		nextAddedMap := make(map[int]bool)
+
+		for _, currentState := range currentStates {
+			currentStateTransitionMap := n.TransitionMap[currentState]
+
+			for currentStateTransitonInputSymbol, inputSymbolToNextStates := range currentStateTransitionMap {
+				if currentStateTransitonInputSymbol == currentInputSymbol {
+					for _, nextState := range inputSymbolToNextStates {
+						if !nextAddedMap[nextState] {
+							nextStates = append(nextStates, nextState)
+							nextAddedMap[nextState] = true
+						}
+					}
+				} else if currentStateTransitonInputSymbol == epsilonSymbol {
+					var dfs func(state int)
+					dfs = func(stateByEpsilon int) {
+						epsilonStateTransitionMap := n.TransitionMap[stateByEpsilon]
+						if toStates, ok := epsilonStateTransitionMap[currentInputSymbol]; ok {
+							for _, toState := range toStates {
+								if !nextAddedMap[toState] {
+									nextStates = append(nextStates, toState)
+									nextAddedMap[toState] = true
+								}
+							}
+						} else {
+							if toStates2, ok := epsilonStateTransitionMap[epsilonSymbol]; ok {
+								for _, toState := range toStates2 {
+									dfs(toState)
+								}
+							}
+						}
+					}
+
+					for _, nextStateByEpsilon := range inputSymbolToNextStates {
+						dfs(nextStateByEpsilon)
+					}
+				}
+			}
+		}
+		currentStates = nextStates
+	}
+
+	for _, character := range str {
+		step(string(character))
+	}
+
+	answer := false
+
+	acceptStateMap := make(map[int]bool)
+	for _, stateId := range n.AcceptStates {
+		acceptStateMap[stateId] = true
+	}
+
+	var dfsCheckIsFinal func(s int) bool
+	dfsCheckIsFinal = func(state int) bool {
+		if acceptStateMap[state] {
+			return true
+		}
+		if epsilonStates, ok := n.TransitionMap[state][epsilonSymbol]; ok {
+			for _, s2 := range epsilonStates {
+				if dfsCheckIsFinal(s2) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	for _, endState := range currentStates {
+		if dfsCheckIsFinal(endState) {
+			answer = true
+			break
+		}
+	}
+
+	return answer
 }
 
 func (n *NFA) ConvertToJSON() *model.DrawFAResponse {
