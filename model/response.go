@@ -43,3 +43,8 @@ type FA interface {
 	Match(s string) bool
 	ConvertToJSON() *DrawFAResponse
 }
+
+type MatchAnswer struct {
+	Result bool    `json:"result"`
+	Time   float64 `json:"time"`
+}

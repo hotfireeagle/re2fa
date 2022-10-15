@@ -37,8 +37,9 @@ export default function App() {
       fa2: "bottomRight",
     }
     const resultMap = new Map().set(true, "success").set(false, "error")
-    notification[resultMap.get(result)]({
-      message: result ? "Match!" : "Unmatch!",
+    notification[resultMap.get(result["result"])]({
+      message: result["result"] ? "Match!" : "Unmatch!",
+      description: `执行时间: ${result["time"]}us.`,
       placement: posMap[id],
     })
   }
