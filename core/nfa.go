@@ -473,6 +473,7 @@ func (n *NFA) Match(str string) bool {
 	var step = func(currentInputSymbol string) {
 		nextStates := make([]int, 0)
 		nextAddedMap := make(map[int]bool)
+		dfsVisitedState := make(map[int]bool)
 
 		for _, currentState := range currentStates {
 			currentStateTransitionMap := n.TransitionMap[currentState]
@@ -488,6 +489,10 @@ func (n *NFA) Match(str string) bool {
 				} else if currentStateTransitonInputSymbol == epsilonSymbol {
 					var dfs func(state int)
 					dfs = func(stateByEpsilon int) {
+						if dfsVisitedState[stateByEpsilon] {
+							return
+						}
+						dfsVisitedState[stateByEpsilon] = true
 						epsilonStateTransitionMap := n.TransitionMap[stateByEpsilon]
 						if toStates, ok := epsilonStateTransitionMap[currentInputSymbol]; ok {
 							for _, toState := range toStates {
